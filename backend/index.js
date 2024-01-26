@@ -22,4 +22,4 @@ connectDB()
         console.log('MONGO DB connection error !!!', err);
     });
 
-app.use('/api/v1',userRoute);
+app.use('/api/v1/user',userRoute);
