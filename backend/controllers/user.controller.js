@@ -43,6 +43,44 @@ const registerUser = async (req, res) => {
 
 }
 
+const loginBody = zod.object({
+    username: zod.string().email(),
+    password: zod.string()
+});
+const loginUser = async (req, res) => {
+    const {success} = loginBody.safeParse(req.body);
+
+    if (!success) {
+        return res.status(400).json({message: 'Invalid data'});
+    }
+
+    const user = await User.findOne({
+        username: req.body.username,
+        password: req.body.password
+    });
+
+    if (!user) {
+        return res.status(401).json({
+            message: "Incorrect username/password"
+        })
+    }
+
+    if (user) {
+        const token = jwt.sign({
+            userId: user._id
+        }, process.env.JWT_SECRET);
+
+        res.json({
+            token: token
+        })
+
+    }
+
+    return res.status(200).json({
+        message: "User logged in successfully"
+    })
+}
 export {
     registerUser,
+    loginUser,
 }
