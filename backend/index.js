@@ -2,11 +2,12 @@ import express from 'express';
 import connectDB from "./db/db.js";
 import dotenv from 'dotenv';
 import userRoute from "./routes/user.route.js";
+import cors from 'cors';
 dotenv.config();
 
 const app = express();
 app.use(express.json());
-
+app.use(cors());
 connectDB()
     .then(() => {
         app.listen(process.env.PORT || 8000, () => {
