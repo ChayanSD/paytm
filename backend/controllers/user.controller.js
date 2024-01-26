@@ -80,7 +80,32 @@ const loginUser = async (req, res) => {
         message: "User logged in successfully"
     })
 }
+
+const updateBody = zod.object({
+    password: zod.string().optional(),
+    firstName: zod.string().optional(),
+    lastName: zod.string().optional(),
+});
+const updateUser = async (req, res) => {
+    const { success } = updateBody.safeParse(req.body)
+    if (!success) {
+        res.status(411).json({
+            message: "Error while updating information"
+        })
+    }
+
+    await User.updateOne(req.body, {
+        id: req.userId
+    })
+
+    res.json({
+        message: "Updated successfully"
+    })
+}
+
+
 export {
     registerUser,
     loginUser,
+    updateUser
 }
