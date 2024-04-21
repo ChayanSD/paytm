@@ -1,6 +1,7 @@
 import {User} from '../models/user.model.js';
 import zod from 'zod';
 import jwt from "jsonwebtoken";
+import { Account } from '../models/account.model.js';
 
 const signupBody = zod.object({
     username: zod.string().email(),
@@ -33,6 +34,13 @@ const registerUser = async (req, res) => {
     });
 
     const userId = await user._id;
+
+    //------create new accoutn with random balances----//
+
+    await Account.create({
+        userId,
+        balance : 1 + Math.random() * 10000
+    });
 
     const token = jwt.sign({userId}, process.env.JWT_SECRET, {expiresIn: '1d'});
 
@@ -103,9 +111,35 @@ const updateUser = async (req, res) => {
     })
 }
 
+const getAllUsers = async (req, res) => {
+    const filter = req.query.filter || "";
+
+    const users = await User.find({
+        $or: [{
+            firstName: {
+                "$regex": filter
+            }
+        }, {
+            lastName: {
+                "$regex": filter
+            }
+        }]
+    })
+
+    res.json({
+        user: users.map(user => ({
+            username: user.username,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            _id: user._id
+        }))
+    })
+}
+
 
 export {
     registerUser,
     loginUser,
-    updateUser
+    updateUser,
+    getAllUsers
 }
