@@ -15,64 +15,45 @@ const getBalance = async (req, res) => {
     })
 };
 
-const transactionZod = z.object({
-    amount : z.number(),
-    to : z.string() 
-})
+// const transactionZod = z.object({
+//     amount : z.string(),
+//     to : z.string() 
+// })
 
 const transferMoney = async (req, res)=>{
-    const session =await mongoose.startSession();
-     session.startTransaction();
-    
-    // const {amount , to} = req.body;
-    const {success} = transactionZod.safeParse(req.body);
+    const session = await mongoose.startSession();
 
-    if (!success) {
-        return res.status(400).json({message: 'Invalid data'});
-    }
+    session.startTransaction();
+    const { amount, to } = req.body;
 
-    const account = await Account.findOne({
-        userId : req.userId
-    }).session(session);
+    // Fetch the accounts within the transaction
+    const account = await Account.findOne({ userId: req.userId }).session(session);
 
-    if(!account || account.balance < amount){
+    if (!account || account.balance < amount) {
         await session.abortTransaction();
-        return res.status(400).json({message : "Insufficient Balance"})
+        return res.status(400).json({
+            message: "Insufficient balance"
+        });
     }
 
-    const toAccount = await Account.findOne({
-        userId : to
-    }).session(session);
+    const toAccount = await Account.findOne({ userId: to }).session(session);
 
-    if(!toAccount){
+    if (!toAccount) {
         await session.abortTransaction();
-        return res.status(400).json({message : "Incorrect Account"})
+        return res.status(400).json({
+            message: "Invalid account"
+        });
     }
 
-    await Account.updateOne({
-        userId : req.userId
-    },
-    {
-        $inc: {
-            balance : - amount
-        }
-    }).session(session);
+    // Perform the transfer
+    await Account.updateOne({ userId: req.userId }, { $inc: { balance: -amount } }).session(session);
+    await Account.updateOne({ userId: to }, { $inc: { balance: amount } }).session(session);
 
-    await Account.updateOne({
-        userId : to
-    },
-    {
-        $inc: {
-            balance : amount
-        }
-    }).session(session);
-
-    //commit the transaction
+    // Commit the transaction
     await session.commitTransaction();
-
-    return res.status(200).json({
-        message : "Transfer successfull"
-    })
+    res.json({
+        message: "Transfer successful"
+    });
 
 }
 

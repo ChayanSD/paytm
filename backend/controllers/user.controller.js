@@ -37,7 +37,7 @@ const registerUser = async (req, res) => {
 
     //------create new accoutn with random balances----//
 
-    await Account.create({
+   await Account.create({
         userId,
         balance : 1 + Math.random() * 10000
     });
@@ -111,29 +111,63 @@ const updateUser = async (req, res) => {
     })
 }
 
+const getCurrentUser = async(req,res)=>{
+   
+    try {
+        const user = await User.findById(req.userId);
+
+        const account = await Account.findOne(
+            {
+                userId : req.userId
+            }
+        )
+        
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        const { _id, username, firstName, lastName } = user;
+
+        return res.status(200).json({
+            _id,
+            username,
+            firstName,
+            lastName,
+            balance : account.balance 
+        });
+    } catch (error) {
+        console.error('Error fetching user:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+}
+
 const getAllUsers = async (req, res) => {
     const filter = req.query.filter || "";
-
-    const users = await User.find({
-        $or: [{
-            firstName: {
-                "$regex": filter
-            }
-        }, {
-            lastName: {
-                "$regex": filter
-            }
-        }]
-    })
-
-    res.json({
-        user: users.map(user => ({
-            username: user.username,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            _id: user._id
-        }))
-    })
+    try {
+        const users = await User.find({
+            $or: [{
+                firstName: {
+                    "$regex": filter
+                }
+            }, {
+                lastName: {
+                    "$regex": filter
+                }
+            }]
+        })
+        
+       return res.json({
+            message : "Successfull",
+            user: users.map(user => ({
+                username: user.username,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                _id: user._id
+            }))
+        })
+    } catch (error) {
+        console.log(error)
+    }
+    
 }
 
 
@@ -141,5 +175,6 @@ export {
     registerUser,
     loginUser,
     updateUser,
-    getAllUsers
+    getAllUsers,
+    getCurrentUser
 }
